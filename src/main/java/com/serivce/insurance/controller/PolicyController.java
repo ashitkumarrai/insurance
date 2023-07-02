@@ -32,7 +32,6 @@ import com.serivce.insurance.payload.PolicyCreationForm;
 import com.serivce.insurance.service.PdfGenerationService;
 import com.serivce.insurance.service.PolicyService;
 
-import jakarta.persistence.EntityNotFoundException;
 import jakarta.validation.Valid;
 import lombok.extern.log4j.Log4j2;
 
