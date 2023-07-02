@@ -27,6 +27,7 @@ public record PolicyCreationForm(@NotNull  Long customerId,
         String beneficiaryRelationship,
 
         @Valid Policy policy,
-        @NotNull  @AssertTrue Boolean agreedToTerms,
-        @NotNull  @AssertTrue Boolean consentForDataProcessing) {
+        @NotNull(message = "agree to terms field must not be null")  @AssertTrue(message="must be agree to terms") Boolean agreedToTerms,
+        @NotNull(message = "agree to data processing field must not be null") @AssertTrue(message="must be agree to consent for data processing") Boolean consentForDataProcessing) {
 }
+        

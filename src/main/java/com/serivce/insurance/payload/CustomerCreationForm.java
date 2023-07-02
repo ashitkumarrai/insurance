@@ -17,7 +17,8 @@ import jakarta.validation.constraints.Pattern;
 public record CustomerCreationForm(
     
         @Length(min = 3,max=15, message = "must have min 3 chars and max 15 ")
-	    @Pattern(regexp = "([\\w_\\.]){3,15}", message = "must be alpha-numeric [can contains underscore(_)or dot(.) and @]")
+                @Pattern(regexp = "([\\w_\\.]){3,15}", message = "must be alpha-numeric [can contains underscore(_)or dot(.) and @]")
+            @NotNull(message = "username must not null")
         String username,
         @NotNull(message = "fullName is mandatory") @NotBlank(message = "fullName must not be blank")
         String fullName,
