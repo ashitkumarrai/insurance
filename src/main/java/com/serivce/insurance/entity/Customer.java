@@ -14,13 +14,11 @@ import jakarta.persistence.Embedded;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
-import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.OneToOne;
-import jakarta.validation.Valid;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -105,6 +103,7 @@ public class Customer {
    
       @OneToMany(mappedBy = "customer", cascade = CascadeType.ALL, orphanRemoval = true)
       @JsonIgnoreProperties({ "customer" })
+      
     private List<Policy> policies = new ArrayList<>();
   
 }

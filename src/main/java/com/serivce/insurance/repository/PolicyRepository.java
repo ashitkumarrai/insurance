@@ -9,11 +9,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
-import com.serivce.insurance.entity.Customer;
 import com.serivce.insurance.entity.Policy;
-import com.serivce.insurance.entity.Policy;
-import com.serivce.insurance.entity.User;
-
 import org.springframework.stereotype.Repository;
 
 
