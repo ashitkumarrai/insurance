@@ -103,7 +103,7 @@ public class Customer {
    
       @OneToMany(mappedBy = "customer", cascade = CascadeType.ALL, orphanRemoval = true)
       @JsonIgnoreProperties({ "customer" })
-      
+      @Builder.Default
     private List<Policy> policies = new ArrayList<>();
   
 }
