@@ -4,10 +4,12 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.env.Environment;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 
 import org.springframework.security.config.http.SessionCreationPolicy;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.ldap.DefaultSpringSecurityContextSource;
 import org.springframework.security.ldap.authentication.BindAuthenticator;
 import org.springframework.security.ldap.authentication.LdapAuthenticationProvider;
@@ -39,42 +41,19 @@ public class CustomSecurityConfiguration {
                    .requestMatchers("/swagger-ui/index.html").permitAll()
                    .requestMatchers("/**").authenticated()).sessionManagement().sessionCreationPolicy(SessionCreationPolicy.STATELESS)
                    .and().httpBasic();
-        
-      
-   
-
-
 
     return http.build();
        }
-
-        
-    @Bean
-    LdapAuthenticationProvider ldapAuthenticationProvider() {
-        System.out.println("hellllllllllllo");
-        return new LdapAuthenticationProvider(authenticator(), ldapUserAuthoritiesPopulator);
-    }
-
-    @Bean
-    BindAuthenticator authenticator() {
-        String searchBase = "dc=insurance,dc=com";
-        String filter = env.getProperty("ldap.search.filter");
-        assert filter != null;
-        System.out.println(filter);
-
-        FilterBasedLdapUserSearch search = new FilterBasedLdapUserSearch(searchBase, filter, contextSource());
-        
-        BindAuthenticator authenticator = new BindAuthenticator(contextSource());
-        authenticator.setUserSearch(search);
-
-        return authenticator;
-    }
-   @Bean
-    public DefaultSpringSecurityContextSource contextSource() {
-        DefaultSpringSecurityContextSource defSecCntx = new DefaultSpringSecurityContextSource(env.getProperty("spring.ldap.urls") + "/" + env.getProperty("spring.ldap.base"));
-        defSecCntx.setUserDn(env.getProperty("ldap.managerDn") + "," + env.getProperty("spring.ldap.base"));
-        defSecCntx.setPassword(env.getProperty("spring.ldap.password"));
-        return defSecCntx;
+        @Autowired
+   public void configure(AuthenticationManagerBuilder authenticationManagerBuilder) throws Exception
+    {
+        authenticationManagerBuilder
+                .ldapAuthentication()
+                .contextSource().url("ldap://localhost:10389")
+                .managerDn("uid=admin,ou=system").managerPassword("secret")
+                .and()
+                .userSearchBase("")
+                .userSearchFilter("(uid={0})");
     }
 
 
