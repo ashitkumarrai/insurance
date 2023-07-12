@@ -24,7 +24,7 @@ public class CustomerServiceImpl implements CustomerService {
     public Customer createCustomer(CustomerCreationForm customerForm) {
 
         User user = User.builder().username(customerForm.username())
-                .password(customerForm.password())
+              
                 
                 
                 
@@ -87,9 +87,7 @@ private void updateUserFields(User user, CustomerUpdate customer) {
         user.setUsername(customer.username());
     }
    
-    if (isNotBlank(customer.password())) {
-        user.setPassword(customer.password());
-    }
+
  
 
 }
