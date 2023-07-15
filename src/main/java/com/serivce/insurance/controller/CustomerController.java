@@ -157,7 +157,7 @@ public ResponseEntity<Map<String, String>> createCustomer(@RequestBody @Valid Cu
           @Operation(operationId = "getAllCustomers", responses = {
      @ApiResponse(responseCode = "401", description = "Unauthorized request" ),
     @ApiResponse(responseCode = "403", description = "Forbidden request"),
-    @ApiResponse(responseCode = "201", description = "sucessfull") },description = "udate customer ",summary = "UPDATE  USTOMER")
+    @ApiResponse(responseCode = "201", description = "sucessfull") },description = "udate customer ",summary = "UPDATE  CUSTOMER")
        @PatchMapping("/customer/{id}")
        @Tag(name="1. Customer endpoints")
     public ResponseEntity<Map<String, String>> partialUpdateCustomer(
