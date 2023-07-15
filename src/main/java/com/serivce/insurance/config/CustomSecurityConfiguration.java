@@ -50,7 +50,8 @@ public class CustomSecurityConfiguration {
 
                         .requestMatchers(new AntPathRequestMatcher("/admin/**")).hasAnyAuthority("admin")
                         
-                        .requestMatchers(new AntPathRequestMatcher("/customers")).hasAnyAuthority("admin")
+                           .requestMatchers(new AntPathRequestMatcher("/customers")).hasAnyAuthority("admin")
+                        .requestMatchers(new AntPathRequestMatcher("/customer/delete/**")).hasAnyAuthority("admin")
                         .requestMatchers(new AntPathRequestMatcher("/customer/**")).hasAnyAuthority("admin", "customer")
                         .anyRequest().authenticated())
                         .sessionManagement().sessionCreationPolicy(SessionCreationPolicy.STATELESS)

@@ -4,10 +4,12 @@ import org.springframework.web.bind.annotation.RestController;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.web.bind.annotation.ResponseBody;
 
 import lombok.extern.slf4j.Slf4j;
@@ -26,7 +28,10 @@ import com.serivce.insurance.entity.File;
 import com.serivce.insurance.exceptionhandler.RecordNotFoundException;
 import com.serivce.insurance.repository.FileRepository;
 
+import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.parameters.RequestBody;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 
@@ -37,9 +42,14 @@ public class FileController {
     @Autowired
     FileRepository fr;
 
-    @PostMapping("/media/upload")
+    @PostMapping(value = "/media/upload", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @Tag(name = "1. Customer endpoints")
+    @Operation(operationId = "uploadMedia", responses = {
+        @ApiResponse(responseCode = "401", description = "Unauthorized request" ),
+       @ApiResponse(responseCode = "403", description = "Forbidden request"),
+       @ApiResponse(responseCode = "201", description = "sucessfull") },description = "upload media",summary = "UPLOAD MEDIA")
     public @ResponseBody ResponseEntity<Object> uploadmedia(HttpServletRequest request,
-            final @RequestBody MultipartFile file) {
+            final  @RequestPart("file") MultipartFile file) {
         try {
 
             String name = file.getOriginalFilename();
@@ -76,6 +86,10 @@ public class FileController {
     }
 
     @GetMapping("/media/show/{id}")
+       @Operation(operationId = "getMediaById", responses = {
+   
+    @ApiResponse(responseCode = "200", description = "sucessfull") },description = "get media by id",summary = "GET MEDIA BY ID")
+    @Tag(name="1. Customer endpoints")
     @ResponseBody
 
     void showMedia(@PathVariable("id") String id, HttpServletResponse response)
@@ -90,6 +104,8 @@ public class FileController {
     }
 
     @GetMapping("/media/show/all")
+    @Operation(operationId = "showAllMedia",summary = "SHOW ALL MEDIA URLS")
+    @Tag(name="2. Admin endpoints")
     List<File> showAllMedia() {
 
         return fr.findAll();

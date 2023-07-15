@@ -15,7 +15,8 @@ import com.serivce.insurance.payload.PolicyCreationForm;
 import com.serivce.insurance.repository.CustomerRepository;
 import com.serivce.insurance.repository.PolicyRepository;
 import com.serivce.insurance.service.PolicyService;
-import jakarta.validation.Valid;
+import com.serivce.insurance.util.SecurityUtils;
+
 import jakarta.validation.Valid;
 
 @Service
@@ -29,13 +30,16 @@ public class PolicyServiceImpl implements PolicyService{
      
 
     @Override
-    public Policy createPolicy(PolicyCreationForm policyForm) throws BlankMandatoryFieldException, RecordNotFoundException {
+    public Policy createPolicy(PolicyCreationForm policyForm)
+            throws BlankMandatoryFieldException, RecordNotFoundException {
+                String username = SecurityUtils.getCurrentUserLogin().orElseThrow(() -> new RecordNotFoundException("user not logged in"));
 
-
+        
+          
        
 
-        Customer customer = customerRepository.findById(policyForm.customerId())
-                .orElseThrow(() -> new RecordNotFoundException("customer of id " + policyForm.customerId() + " is not found in db"));
+        Customer customer = customerRepository.findByUserUsernameIgnoreCase(username)
+                .orElseThrow(() -> new RecordNotFoundException("customer of username " + username + " is not found in db"));
 
         Policy policy = Policy.builder()
                         .customer(customer)
@@ -48,15 +52,20 @@ public class PolicyServiceImpl implements PolicyService{
                         .deductible(policyForm.deductible())
                         .beneficiaryName(policyForm.beneficiaryName())
                 .beneficiaryRelationship(policyForm.beneficiaryRelationship()).build();
-
-        if (!isNotBlank(customer.getImageUrl())) {
-            throw new BlankMandatoryFieldException(
-                    "customer of id " + policyForm.customerId() + " has not uploaded profile image, complete the profile first");
-        }
-        else if (!isNotBlank(customer.getIdentitydocumentUrl())) {
-             throw new BlankMandatoryFieldException(
-                    "customer of id " + policyForm.customerId() + " has not uploaded any identity document,complete the profile first");
-        }
+                
+        if ((!isNotBlank(customer.getImageUrl())) || customer.getImageUrl().equalsIgnoreCase("null")
+                || customer.getImageUrl().equalsIgnoreCase("string")) {
+               
+                    throw new BlankMandatoryFieldException(
+                            "customer of username " + username + " has not uploaded profile image, complete the profile first");
+                }
+                else if ((!isNotBlank(customer.getIdentitydocumentUrl()))
+                        || customer.getIdentitydocumentUrl().equalsIgnoreCase("null")
+                        || customer.getIdentitydocumentUrl().equalsIgnoreCase("string")) {
+                    throw new BlankMandatoryFieldException(
+                            "customer of id " + username
+                                    + " has not uploaded any identity document,complete the profile first");
+                }
                 
 
         return policyRepository.save(policy);

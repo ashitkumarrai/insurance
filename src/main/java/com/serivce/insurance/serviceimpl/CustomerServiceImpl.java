@@ -28,7 +28,7 @@ public class CustomerServiceImpl implements CustomerService {
                 
                 
                 
-                .role("CUSTOMER")
+                .role("customer")
                 .enabled(true)
                 .build();
 
@@ -71,8 +71,8 @@ public class CustomerServiceImpl implements CustomerService {
     }
 
    @Override
-public Customer partialUpdateCustomer(Long id, CustomerUpdate customer) throws RecordNotFoundException {
-    Customer existingCustomer = findById(id);
+public Customer partialUpdateCustomer(String  username, CustomerUpdate customer) throws RecordNotFoundException {
+    Customer existingCustomer = findByUsername(username);
 
     updateUserFields(existingCustomer.getUser(), customer);
     updateCustomerFields(existingCustomer, customer);

@@ -31,7 +31,10 @@ import com.serivce.insurance.repository.UserRepository;
 import com.serivce.insurance.service.CustomerService;
 import com.serivce.insurance.util.SecurityUtils;
 
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.extern.log4j.Log4j2;
 
@@ -46,7 +49,12 @@ public class CustomerController {
     @Autowired
     UserRepository userRepository;
 
-    
+    @Tag(name = "1. Customer endpoints")
+     
+    @Operation(operationId = "createCustomer", responses = {
+     @ApiResponse(responseCode = "401", description = "Unauthorized request" ),
+    @ApiResponse(responseCode = "403", description = "Forbidden request"),
+    @ApiResponse(responseCode = "201", description = "created sucessfully") },description = "register customer",summary = "CREATE/REGISTER customer")
     @PostMapping("/register/customer")
 public ResponseEntity<Map<String, String>> createCustomer(@RequestBody @Valid CustomerCreationForm customer)
            throws URISyntaxException {
@@ -62,7 +70,12 @@ public ResponseEntity<Map<String, String>> createCustomer(@RequestBody @Valid Cu
 
 
 @SecurityRequirement(name="securedApis")
-    @GetMapping("/customers")
+@GetMapping("/customers")
+@Tag(name = "2. Admin endpoints")
+    @Operation(operationId = "getAllCustomers", responses = {
+     @ApiResponse(responseCode = "401", description = "Unauthorized request" ),
+    @ApiResponse(responseCode = "403", description = "Forbidden request"),
+    @ApiResponse(responseCode = "200", description = "sucessfull") },description = "get all customer",summary = "GET ALL CUSTOMERS")
     public ResponseEntity<CustomerFindAllData> getAllCustomers(@RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size,
             @RequestParam(defaultValue = "updatedAt") String sortBy,
@@ -93,7 +106,13 @@ public ResponseEntity<Map<String, String>> createCustomer(@RequestBody @Valid Cu
         return ResponseEntity.ok().body(response);
     }
 
-      @SecurityRequirement(name="securedApis")
+    @SecurityRequirement(name = "securedApis")
+
+    @Tag(name = "1. Customer endpoints")
+         @Operation(operationId = "getAllCustomers", responses = {
+     @ApiResponse(responseCode = "401", description = "Unauthorized request" ),
+    @ApiResponse(responseCode = "403", description = "Forbidden request"),
+    @ApiResponse(responseCode = "200", description = "sucessfull") },description = "get customer id or usename",summary = "GET CUSTOMER BY ID OR USERNAME")
     @GetMapping("/customer")
     public Customer getCustomerById(@RequestParam(defaultValue = "0") Long id,
             @RequestParam(defaultValue = "default") String username) throws RecordNotFoundException {
@@ -115,8 +134,15 @@ public ResponseEntity<Map<String, String>> createCustomer(@RequestBody @Valid Cu
     }
 
         
-    @SecurityRequirement(name="securedApis")
-    @DeleteMapping("/customer/{id}")
+    @SecurityRequirement(name = "securedApis")
+    @Tag(name="1. Customer endpoints")
+    @DeleteMapping("/customer/delete/{id}")
+    
+    @Operation(operationId = "deleteCustomer", responses = {
+     @ApiResponse(responseCode = "401", description = "Unauthorized request" ),
+    @ApiResponse(responseCode = "403", description = "Forbidden request"),
+    @ApiResponse(responseCode = "204", description = "deleted sucessfully") },description = " delete customer by id",summary = "DELETE CUSTOMER BY ID")
+
     public ResponseEntity<Void> deleteCustomer(@PathVariable Long id) throws RecordNotFoundException {
 
         customerService.deleteById(id);
@@ -127,13 +153,17 @@ public ResponseEntity<Map<String, String>> createCustomer(@RequestBody @Valid Cu
 
     }
     
-       @SecurityRequirement(name="securedApis")
-     @PatchMapping("/customer/{id}")
+    @SecurityRequirement(name = "securedApis")
+          @Operation(operationId = "getAllCustomers", responses = {
+     @ApiResponse(responseCode = "401", description = "Unauthorized request" ),
+    @ApiResponse(responseCode = "403", description = "Forbidden request"),
+    @ApiResponse(responseCode = "201", description = "sucessfull") },description = "udate customer by id",summary = "UPDATE  USTOMER BY ID")
+       @PatchMapping("/customer/{id}")
+       @Tag(name="1. Customer endpoints")
     public ResponseEntity<Map<String, String>> partialUpdateCustomer(
-            @PathVariable("id") final Long id,
             @RequestBody @Valid CustomerUpdate customer) throws URISyntaxException, RecordNotFoundException {
-
-        Customer result = customerService.partialUpdateCustomer(id, customer);
+                String username = SecurityUtils.getCurrentUserLogin().orElseThrow(() -> new RecordNotFoundException("user not logged in"));
+        Customer result = customerService.partialUpdateCustomer(username, customer);
 
         Map<String, String> hasMap = new HashMap<>();
         hasMap.put("response", "updated sucessfully!");
@@ -146,6 +176,11 @@ public ResponseEntity<Map<String, String>> createCustomer(@RequestBody @Valid Cu
 
      @SecurityRequirement(name="securedApis")
      @GetMapping("/profile")
+     @Tag(name = "1. Customer endpoints")
+        @Operation(operationId = "getAllCustomers", responses = {
+     @ApiResponse(responseCode = "401", description = "Unauthorized request" ),
+    @ApiResponse(responseCode = "403", description = "Forbidden request"),
+    @ApiResponse(responseCode = "200", description = "sucessfull") },description = "get logged in customer",summary = "GET PROFILE OF LOGGED ID CUSTOMER")
     public ResponseEntity<Object> getProfile()
             throws RecordNotFoundException {
 

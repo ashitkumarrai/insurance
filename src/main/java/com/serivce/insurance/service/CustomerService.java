@@ -20,7 +20,7 @@ public interface CustomerService {
 
     void deleteById(Long id) throws RecordNotFoundException;
 
-    Customer partialUpdateCustomer(Long id, CustomerUpdate customer) throws RecordNotFoundException;
+    Customer partialUpdateCustomer(String username, CustomerUpdate customer) throws RecordNotFoundException;
 
     Customer findByUsername(String username) throws RecordNotFoundException;
 

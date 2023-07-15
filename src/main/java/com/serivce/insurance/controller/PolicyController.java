@@ -32,8 +32,10 @@ import com.serivce.insurance.payload.PolicyCreationForm;
 import com.serivce.insurance.service.PdfGenerationService;
 import com.serivce.insurance.service.PolicyService;
 
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
-import io.swagger.v3.oas.annotations.security.SecurityRequirements;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.extern.log4j.Log4j2;
 
@@ -47,8 +49,10 @@ public class PolicyController {
      @Autowired
      PdfGenerationService pdfGenerationService;
 
-    
-   @PostMapping("/policy")
+
+     @PostMapping("/policy")
+     @Tag(name = "1. Customer endpoints")
+      @Operation(operationId = "createPolicy",description = "create/apply policy",summary = "CREATE/APPLY POLICY")
    public ResponseEntity<Map<String, String>> createPolicy(@RequestBody @Valid PolicyCreationForm policy)
            throws URISyntaxException, RecordNotFoundException, BlankMandatoryFieldException {
 
@@ -63,7 +67,9 @@ public class PolicyController {
 
 
 
-    @GetMapping("/policies")
+   @GetMapping("/policies")
+   @Tag(name = "2. Admin endpoints")
+   @Operation(operationId = "getAllPolicys",summary = "GET LISTS OF ALL POLICIES")
     public ResponseEntity<List<Policy>> getAllPolicys(@RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size,
             @RequestParam(defaultValue = "customer.updatedAt") String sortBy,
@@ -88,6 +94,11 @@ public class PolicyController {
 
 
     @GetMapping("/policy")
+    @Tag(name = "1. Customer endpoints")
+    @Operation(operationId = "getAllCustomers", responses = {
+        @ApiResponse(responseCode = "401", description = "Unauthorized request" ),
+       @ApiResponse(responseCode = "403", description = "Forbidden request"),
+       @ApiResponse(responseCode = "200", description = "sucessfull") },description = "get Policy by id",summary = "GET POLICY BY ID")
     public ResponseEntity<Object> getPolicyByIdorPolicyName(@RequestParam(defaultValue = "0") Long id,
             @RequestParam(defaultValue = "default") String policyName, @RequestParam(defaultValue = "default") String policyCustomerName) throws RecordNotFoundException {
 
@@ -114,6 +125,11 @@ public class PolicyController {
         
     
     @DeleteMapping("/policy/{id}")
+    @Operation(operationId = "getAllCustomers", responses = {
+        @ApiResponse(responseCode = "401", description = "Unauthorized request" ),
+       @ApiResponse(responseCode = "403", description = "Forbidden request"),
+       @ApiResponse(responseCode = "204", description = "DELETE sucessfull") },description = "delete policy by id",summary = "DELETE POLICY BY ID")
+    @Tag(name="1. Customer endpoints")
     public ResponseEntity<Void> deletePolicy(@PathVariable Long id) throws RecordNotFoundException {
 
         policyService.deleteById(id);
@@ -125,7 +141,10 @@ public class PolicyController {
     }
     
 
-     @PatchMapping("/policy/{id}")
+    @PatchMapping("/policy/{id}")
+    @Operation(operationId = "getAllCustomers",summary = "UPDATE POLICY DETAILS")
+       
+    @Tag(name="1. Customer endpoints")
     public ResponseEntity<Map<String, String>> partialUpdatePolicy(
             @PathVariable("id") final Long id,
             @RequestBody @Valid PolicyCreationForm policy) throws URISyntaxException, RecordNotFoundException {
@@ -142,6 +161,9 @@ public class PolicyController {
 
     
     @GetMapping("/{policyId}/generate-pdf")
+    @Operation(operationId = "getAllCustomers",summary = "DOWNLOAD PDF OF APPLIED POLICY DETAILS DOCUMENT")
+     
+    @Tag(name="1. Customer endpoints")
     public ResponseEntity<byte[]> generatePdf(@PathVariable Long policyId) throws RecordNotFoundException {
     // Retrieve the policy from the database based on the policyId
 

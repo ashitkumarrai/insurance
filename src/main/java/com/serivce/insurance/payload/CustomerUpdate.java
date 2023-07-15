@@ -26,7 +26,7 @@ public record CustomerUpdate(
       
         String email,
 
-        @Pattern(regexp="^[2-9]{2}\\d{8}$",message= "phone number not valid")
+        @Pattern(regexp = "^[2-9]{1}\\d{9}$", message = "phone number not valid")
         String phone,
 
          String imageUrl,
