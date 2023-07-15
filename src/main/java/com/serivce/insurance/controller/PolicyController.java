@@ -32,12 +32,15 @@ import com.serivce.insurance.payload.PolicyCreationForm;
 import com.serivce.insurance.service.PdfGenerationService;
 import com.serivce.insurance.service.PolicyService;
 
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
+import io.swagger.v3.oas.annotations.security.SecurityRequirements;
 import jakarta.validation.Valid;
 import lombok.extern.log4j.Log4j2;
 
 
 @RestController
 @Log4j2
+@SecurityRequirement(name="securedApis")
 public class PolicyController {
     @Autowired
     PolicyService policyService;

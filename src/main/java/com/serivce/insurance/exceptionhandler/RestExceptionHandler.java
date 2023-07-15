@@ -1,5 +1,6 @@
 package com.serivce.insurance.exceptionhandler;
 
+import java.sql.SQLIntegrityConstraintViolationException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -65,7 +66,18 @@ public class RestExceptionHandler extends ResponseEntityExceptionHandler {
         ProblemDetail error = ProblemDetail.forStatusAndDetail(HttpStatus.NOT_FOUND, ex.getLocalizedMessage());
         error.setTitle("ConstraintViolationException");
 
-        return new ResponseEntity<>(error, new HttpHeaders(), HttpStatus.NOT_ACCEPTABLE);
+        return new ResponseEntity<>(error, new HttpHeaders(), HttpStatus.NOT_FOUND);
+
+    }
+
+     @ExceptionHandler({ SQLIntegrityConstraintViolationException.class })
+    public ResponseEntity<Object> handleSQLIntegrityConstraintViolationException(SQLIntegrityConstraintViolationException ex, WebRequest request) {
+        List<String> errors = new ArrayList<>();
+        errors.add(ex.getMessage());
+        ProblemDetail error = ProblemDetail.forStatusAndDetail(HttpStatus.BAD_REQUEST, ex.getLocalizedMessage());
+        error.setTitle("SQLIntegrityConstraintViolationException");
+
+        return new ResponseEntity<>(error, new HttpHeaders(), HttpStatus.BAD_REQUEST);
 
     }
     
@@ -81,3 +93,4 @@ public class RestExceptionHandler extends ResponseEntityExceptionHandler {
     }
 
 }
+
