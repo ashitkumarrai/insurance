@@ -22,7 +22,6 @@ public class UserDetailServiceImpl implements UserDetailsService{
     @Override
     public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
 
-        log.info("helooiosssiosss");
         log.info(username);
         Optional<User> user = ur.findByUsername(username);
         
@@ -31,7 +30,7 @@ public class UserDetailServiceImpl implements UserDetailsService{
             return new UserDetailsImpl(user.get());
 		}
        
-        log.info("adfsasdfdafdasdd");
+       
         return null;
         
         

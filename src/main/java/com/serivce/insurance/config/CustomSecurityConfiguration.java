@@ -89,6 +89,7 @@ public class CustomSecurityConfiguration {
 
         BindAuthenticator authenticator = new BindAuthenticator(contextSource());
         authenticator.setUserSearch(search);
+    
 
         return authenticator;
     }
