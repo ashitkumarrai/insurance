@@ -42,7 +42,7 @@ import lombok.extern.log4j.Log4j2;
 
 @RestController
 @Log4j2
-@SecurityRequirement(name="securedApis")
+@SecurityRequirement(name="Authorization")
 public class PolicyController {
     @Autowired
     PolicyService policyService;

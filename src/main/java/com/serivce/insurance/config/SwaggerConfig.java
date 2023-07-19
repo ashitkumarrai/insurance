@@ -31,7 +31,7 @@ import io.swagger.v3.oas.annotations.servers.Server;
 
 
 )
-@SecurityScheme(name = "securedApis", scheme = "basic", type = SecuritySchemeType.HTTP, in = SecuritySchemeIn.HEADER)
+@SecurityScheme(type = SecuritySchemeType.APIKEY, name = "Authorization", in = SecuritySchemeIn.HEADER)
 public class SwaggerConfig {
     
 }

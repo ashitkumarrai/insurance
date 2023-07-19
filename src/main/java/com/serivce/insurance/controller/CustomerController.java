@@ -69,7 +69,7 @@ public ResponseEntity<Map<String, String>> createCustomer(@RequestBody @Valid Cu
    }
 
 
-@SecurityRequirement(name="securedApis")
+@SecurityRequirement(name="Authorization")
 @GetMapping("/customers")
 @Tag(name = "2. Admin endpoints")
     @Operation(operationId = "getAllCustomers", responses = {
@@ -106,7 +106,7 @@ public ResponseEntity<Map<String, String>> createCustomer(@RequestBody @Valid Cu
         return ResponseEntity.ok().body(response);
     }
 
-    @SecurityRequirement(name = "securedApis")
+    @SecurityRequirement(name = "Authorization")
 
     @Tag(name = "1. Customer endpoints")
          @Operation(operationId = "getAllCustomers", responses = {
@@ -134,7 +134,7 @@ public ResponseEntity<Map<String, String>> createCustomer(@RequestBody @Valid Cu
     }
 
         
-    @SecurityRequirement(name = "securedApis")
+    @SecurityRequirement(name = "Authorization")
     @Tag(name="1. Customer endpoints")
     @DeleteMapping("/customer/delete/{id}")
     
@@ -153,7 +153,7 @@ public ResponseEntity<Map<String, String>> createCustomer(@RequestBody @Valid Cu
 
     }
     
-    @SecurityRequirement(name = "securedApis")
+    @SecurityRequirement(name = "Authorization")
           @Operation(operationId = "getAllCustomers", responses = {
      @ApiResponse(responseCode = "401", description = "Unauthorized request" ),
     @ApiResponse(responseCode = "403", description = "Forbidden request"),
@@ -174,7 +174,7 @@ public ResponseEntity<Map<String, String>> createCustomer(@RequestBody @Valid Cu
 
     }
 
-     @SecurityRequirement(name="securedApis")
+     @SecurityRequirement(name="Authorization")
      @GetMapping("/profile")
      @Tag(name = "1. Customer endpoints")
         @Operation(operationId = "getAllCustomers", responses = {
