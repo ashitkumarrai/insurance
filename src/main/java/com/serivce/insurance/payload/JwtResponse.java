@@ -8,11 +8,13 @@ import org.springframework.security.core.userdetails.UserDetails;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import lombok.Data;
 import lombok.AllArgsConstructor;
+import lombok.Builder;
 
 
 
 @Data
 @AllArgsConstructor
+@Builder
 public class JwtResponse implements Serializable {
 
 	private static final long serialVersionUID = -8091879091924046844L;

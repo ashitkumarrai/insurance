@@ -6,6 +6,9 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+
+import java.util.List;
+
 import org.springframework.stereotype.Component;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -42,10 +45,9 @@ public class User {
 	private String username;
 
 	
-	@JsonProperty(access = Access.WRITE_ONLY)
   
 
-	private String role;
+	private List<String> grantedAuthorities;
 	
 	
 	@JsonProperty(access = Access.WRITE_ONLY)
