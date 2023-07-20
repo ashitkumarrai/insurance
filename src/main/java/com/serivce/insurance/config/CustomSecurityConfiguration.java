@@ -1,4 +1,5 @@
 package com.serivce.insurance.config;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
@@ -6,9 +7,9 @@ import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 
 import org.springframework.security.config.http.SessionCreationPolicy;
-import org.springframework.security.web.DefaultSecurityFilterChain;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.security.web.authentication.logout.LogoutFilter;
 import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
 
 
@@ -16,7 +17,10 @@ import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
 @Configuration
 @EnableWebSecurity
 public class CustomSecurityConfiguration {
-    
+        
+        @Autowired
+  private FilterChainExceptionHandler filterChainExceptionHandler;
+
 
     
  final String[] WHITELIST_URL = {
@@ -33,8 +37,7 @@ public class CustomSecurityConfiguration {
 };
 
        @Bean
-       protected SecurityFilterChain filterChain(HttpSecurity http, JwtRequestFilter jwtRequestFilter,
-               JwtAuthenticationEntryPoint jwtAuthenticationEntryPoint)
+       protected SecurityFilterChain filterChain(HttpSecurity http, JwtRequestFilter jwtRequestFilter)
                throws Exception {
            http
 
@@ -53,14 +56,9 @@ public class CustomSecurityConfiguration {
                            .anyRequest().authenticated())
                    .sessionManagement().sessionCreationPolicy(SessionCreationPolicy.STATELESS)
                    .and()
-                   .exceptionHandling()
-                   .authenticationEntryPoint(jwtAuthenticationEntryPoint)
-
-                   .and()
-                   .logout()
-                   .disable()
-                   .formLogin()
-                   .disable();
+                           .addFilterBefore(filterChainExceptionHandler, LogoutFilter.class);
+                 
+                   
            http.addFilterBefore(jwtRequestFilter, UsernamePasswordAuthenticationFilter.class);
 
            return http.build();

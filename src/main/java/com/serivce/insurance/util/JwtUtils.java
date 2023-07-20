@@ -5,17 +5,20 @@ import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.xml.bind.DatatypeConverter;
-import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 
+
 import java.time.ZonedDateTime;
+import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeFormatterBuilder;
 import java.util.Date;
 import java.util.List;
 import java.util.Optional;
 
 import javax.crypto.spec.SecretKeySpec;
 
-@Slf4j
+
+
 public class JwtUtils {
 	private static final SignatureAlgorithm HS256 = SignatureAlgorithm.HS256;
 	private static final String ALG_NAME = HS256.getJcaName();
@@ -24,8 +27,11 @@ public class JwtUtils {
 	private JwtUtils() {
 	}
 
-	public static String createJWTToken(String username, String secret, long expiration, List<String> grantedAuthorities) {
+	public static String createJWTToken(String username, String secret, long expiration,
+			List<String> grantedAuthorities) {
+
 		ZonedDateTime now = ZonedDateTime.now();
+		
 
 		return Jwts.builder()
 				.setSubject(username)
@@ -45,14 +51,11 @@ public class JwtUtils {
 		return tokenWithBearerPrefix.map(s -> StringUtils.substring(s, BEARER_INDEX));
 	}
 
-	public static boolean verifyToken(String token, String secret) {
-		try {
+	public static boolean verifyToken(String token, String secret)   {
+		
 			extractAllClaims(token, secret);
 			return true;
-		} catch (Exception e) {
-			log.error("Exception while parsing JWT token: {}", e.getMessage());
-		}
-		return false;
+		
 	}
 	
 	public static String extractUsername(String token, String secret) {
