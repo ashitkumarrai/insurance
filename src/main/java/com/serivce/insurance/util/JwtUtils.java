@@ -1,10 +1,13 @@
 package com.serivce.insurance.util;
 
 import io.jsonwebtoken.Claims;
+import io.jsonwebtoken.ExpiredJwtException;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.xml.bind.DatatypeConverter;
+import lombok.extern.log4j.Log4j2;
+
 import org.apache.commons.lang3.StringUtils;
 
 
@@ -12,11 +15,12 @@ import java.time.ZonedDateTime;
 import java.util.Date;
 import java.util.List;
 import java.util.Optional;
+import java.util.function.Function;
 
 import javax.crypto.spec.SecretKeySpec;
 
 
-
+@Log4j2
 public class JwtUtils {
 	private static final SignatureAlgorithm HS256 = SignatureAlgorithm.HS256;
 	private static final String ALG_NAME = HS256.getJcaName();
@@ -49,12 +53,36 @@ public class JwtUtils {
 		return tokenWithBearerPrefix.map(s -> StringUtils.substring(s, BEARER_INDEX));
 	}
 
-	public static boolean verifyToken(String token, String secret)   {
-		
-			extractAllClaims(token, secret);
+	public static boolean verifyToken(String token, String secret) {
+
+		extractAllClaims(token, secret);
+		return true;
+
+	}
+	
+	public static boolean isTokenExpired(String token,String secret) {
+		try{extractExpiration(token, secret).before(new Date());}
+		catch (ExpiredJwtException ex) {
+			log.info("token expired");
 			return true;
+		}
+		
+			return false;
 		
 	}
+	
+	
+	public static  Date extractExpiration(String token,String secret) {
+		return extractClaim(token, Claims::getExpiration,secret);
+	}
+	
+	
+	public static <T> T extractClaim(String token, Function<Claims, T> claimResolver, String secret) {
+		
+		final Claims claim = extractAllClaims(token, secret);
+		return claimResolver.apply(claim);
+	}
+	
 	
 	public static String extractUsername(String token, String secret) {
 		final Claims claims = extractAllClaims(token, secret);

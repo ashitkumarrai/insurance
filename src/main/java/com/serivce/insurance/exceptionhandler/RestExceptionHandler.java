@@ -24,10 +24,9 @@ import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExcep
 import io.jsonwebtoken.ExpiredJwtException;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.ConstraintViolationException;
-import lombok.extern.log4j.Log4j2;
+
 
 @RestControllerAdvice
-@Log4j2
 public class RestExceptionHandler extends ResponseEntityExceptionHandler {
 
     @Override

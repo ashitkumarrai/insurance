@@ -8,11 +8,11 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
-import com.serivce.insurance.serviceimpl.PortalUserService;
 import com.serivce.insurance.serviceimpl.UserPrincipal;
 
 import com.serivce.insurance.util.JwtUtils;
@@ -27,7 +27,7 @@ public class JwtRequestFilter extends OncePerRequestFilter {
 	@Value("${jwt.secret}")
 	private String jwtSecret;
 	@Autowired
-	private  PortalUserService portalUserService;
+	private  UserDetailsService userService;
 	
 	@Override
 	protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) throws ServletException, IOException {
@@ -51,7 +51,7 @@ public class JwtRequestFilter extends OncePerRequestFilter {
 	
 				if (JwtUtils.verifyToken(token, jwtSecret)) {
 					String username = JwtUtils.extractUsername(token, jwtSecret);
-					UserPrincipal principal = (UserPrincipal) portalUserService.loadUserByUsername(username);
+					UserPrincipal principal = (UserPrincipal) userService.loadUserByUsername(username);
 
 					UsernamePasswordAuthenticationToken auth = new UsernamePasswordAuthenticationToken(principal, null,
 							principal.getAuthorities());

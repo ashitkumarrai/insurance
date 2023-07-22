@@ -15,13 +15,13 @@ import com.serivce.insurance.exceptionhandler.UserDisabledException;
 import com.serivce.insurance.payload.JwtRequest;
 import com.serivce.insurance.payload.JwtResponse;
 import com.serivce.insurance.repository.UserRepository;
-import com.serivce.insurance.serviceimpl.PortalUserService;
+import com.serivce.insurance.serviceimpl.LdapService;
 
 @RestController
 @RequiredArgsConstructor
 @Slf4j
 public class AuthenticateController {
-    private final PortalUserService portalUserService;
+    private final LdapService portalUserService;
     private final UserRepository userRepository;
 
     @PostMapping("/authenticate")

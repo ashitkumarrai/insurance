@@ -12,17 +12,18 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 
 @RequiredArgsConstructor
-public class UserPrincipal implements UserDetails {
-	private static final long serialVersionUID = -8603695528030228319L;
+public class UserPrincipal  implements UserDetails{
 
 	private final User portalUser;
 
 	@Override
 	public Collection<GrantedAuthority> getAuthorities() {
-		return this.portalUser.getGrantedAuthorities().stream()
-				.map(SimpleGrantedAuthority::new)
+		return this.portalUser.getRoles().stream()
+				.map(g->new SimpleGrantedAuthority(g.getRoleName()))
 				.collect(Collectors.toList());
 	}
+
+	
 
 	@Override
 	public String getPassword() {

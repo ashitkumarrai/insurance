@@ -10,6 +10,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.ldap.NamingException;
 import org.springframework.stereotype.Service;
 import com.serivce.insurance.entity.Customer;
+import com.serivce.insurance.entity.Role;
 import com.serivce.insurance.entity.User;
 import com.serivce.insurance.exceptionhandler.RecordNotFoundException;
 import com.serivce.insurance.payload.CustomerCreationForm;
@@ -27,7 +28,7 @@ public class CustomerServiceImpl implements CustomerService {
     CustomerRepository customerRepository;
 
     @Autowired
-    PortalUserService portalUserService;
+    LdapService portalUserService;
 
     @Override
     public Customer createCustomer(CustomerCreationForm customerForm) throws NamingException, NoSuchAlgorithmException, javax.naming.NamingException {
@@ -37,7 +38,7 @@ public class CustomerServiceImpl implements CustomerService {
                 
                 
                 
-                .grantedAuthorities(List.of("customer"))
+                .roles(List.of(new Role(101l,"customer")))
                 .build();
 
         Customer customer = Customer.builder()
