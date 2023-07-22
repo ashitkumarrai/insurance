@@ -4,6 +4,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.dao.IncorrectResultSizeDataAccessException;
+import org.springframework.ldap.NamingException;
 import org.springframework.ldap.core.AttributesMapper;
 import org.springframework.ldap.core.DirContextOperations;
 import org.springframework.ldap.core.support.BaseLdapPathContextSource;
@@ -21,18 +22,30 @@ import org.springframework.security.ldap.SpringSecurityLdapTemplate;
 import org.springframework.security.ldap.authentication.PasswordComparisonAuthenticator;
 import org.springframework.stereotype.Component;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.Assert;
-
 import com.serivce.insurance.entity.User;
 import com.serivce.insurance.payload.JwtResponse;
 import com.serivce.insurance.util.Constants;
 import com.serivce.insurance.util.JwtUtils;
 
 import jakarta.annotation.PostConstruct;
+
+import javax.naming.NameAlreadyBoundException;
+import javax.naming.directory.BasicAttribute;
+import javax.naming.directory.BasicAttributes;
+import javax.naming.directory.DirContext;
+import javax.naming.directory.ModificationItem;
 import javax.naming.directory.SearchControls;
+
+import java.nio.charset.StandardCharsets;
+import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
+import java.util.Base64;
 import java.util.List;
 import java.util.stream.Collectors;
+import java.security.MessageDigest;
+
 
 @Service
 @Component
@@ -204,21 +217,72 @@ public class PortalUserService implements UserDetailsService {
  * @param ldapResult The LDAP query result for the user.
  * @return A list of user's roles (groups) defined in LDAP.
  */
-private List<String> getGrantedAuthorities(DirContextOperations ldapResult) {
-    // Search for the 'member' attribute in the 'ou=groups' entries
-    String userDN = ldapResult.getNameInNamespace();
-    SpringSecurityLdapTemplate template = new SpringSecurityLdapTemplate(this.contextSource);
-    String groupFilter = "(&(objectClass=groupOfNames)(member=" + userDN + "))";
-    SearchControls searchControls = new SearchControls();
-    searchControls.setSearchScope(SearchControls.SUBTREE_SCOPE);
+   private List<String> getGrantedAuthorities(DirContextOperations ldapResult) {
+       // Search for the 'member' attribute in the 'ou=groups' entries
+       String userDN = ldapResult.getNameInNamespace();
+       SpringSecurityLdapTemplate template = new SpringSecurityLdapTemplate(this.contextSource);
+       String groupFilter = "(&(objectClass=groupOfNames)(member=" + userDN + "))";
+       SearchControls searchControls = new SearchControls();
+       searchControls.setSearchScope(SearchControls.SUBTREE_SCOPE);
 
-    // Search for groups where the userDN is a member
-    List<String> groupDNs = template.search(
-            this.groupBase, groupFilter, searchControls,
-            (AttributesMapper<String>) attrs -> (String) attrs.get("cn").get());
-   
-    // Extract the group names (Common Names) from the DNs
-    return groupDNs;
-}
+       // Search for groups where the userDN is a member
+       return template.search(
+               this.groupBase, groupFilter, searchControls,
+               (AttributesMapper<String>) attrs -> (String) attrs.get("cn").get());
+
+   }
+
+
+    /**
+     * Creates a new customer in the LDAP server and adds them to the "customer" group.
+     *
+     * @param username The username of the customer.
+     * @param password The password of the customer (plain text).
+     * @param fullName The full name of the customer.
+     * @param email    The email address of the customer.
+     * @return The created customer's username.
+     * @throws NamingException if there is an issue while creating the customer.
+     * @throws javax.naming.NamingException
+     * @throws NoSuchAlgorithmException
+     */
+    public String createCustomerInLdap(String username, String password, String fullName) throws javax.naming.NamingException, NoSuchAlgorithmException {
+        // Define the distinguished name (DN) for the new customer entry
+        String newUserDN = "uid=" + username;
+        log.info("userDn: " + newUserDN);
+
+        // Set the attributes for the new customer entry
+        BasicAttributes attrs = new BasicAttributes();
+        attrs.put("objectclass", "inetOrgPerson");
+        attrs.put("uid", username);
+        attrs.put("cn", fullName);
+        attrs.put("sn", username);
+        attrs.put("userPassword", encodePassword(password)); // Encode the password before storing it
+
+        // Create the new customer entry in the LDAP server
+        DirContext ctx = this.contextSource.getReadWriteContext();
+        ctx.createSubcontext(newUserDN, attrs);
+        log.info("customer created");
+        ctx.close();
+
+        // Add the new customer to the "customer" group
+        String customerGroupDN = "cn=customer," + this.groupBase;
+        ModificationItem[] modificationItems = new ModificationItem[1];
+        modificationItems[0] = new ModificationItem(DirContext.ADD_ATTRIBUTE, new BasicAttribute("member", newUserDN));
+
+        DirContext groupCtx = this.contextSource.getReadWriteContext();
+        groupCtx.modifyAttributes(customerGroupDN, modificationItems);
+        groupCtx.close();
+
+        return username;
+    }
+
+    // Helper method to encode the password using SHA-1 and Base64
+    private String encodePassword(String password) throws NoSuchAlgorithmException {
+        MessageDigest sha1 = MessageDigest.getInstance("SHA-1");
+        sha1.update(password.getBytes(StandardCharsets.UTF_8));
+        byte[] digest = sha1.digest();
+        return "{SHA}" + Base64.getEncoder().encodeToString(digest);
+    }
+
 
 }

@@ -1,12 +1,17 @@
 package com.serivce.insurance.serviceimpl;
 
+import java.security.NoSuchAlgorithmException;
 import java.time.Instant;
 import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.ldap.NamingException;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Isolation;
+import org.springframework.transaction.annotation.Propagation;
+import org.springframework.transaction.annotation.Transactional;
 
 import com.serivce.insurance.entity.Customer;
 import com.serivce.insurance.entity.User;
@@ -22,8 +27,12 @@ public class CustomerServiceImpl implements CustomerService {
     @Autowired
     CustomerRepository customerRepository;
 
+    @Autowired
+    PortalUserService portalUserService;
+
     @Override
-    public Customer createCustomer(CustomerCreationForm customerForm) {
+    @Transactional(transactionManager = "jtaTransactionManager", rollbackFor = Exception.class, isolation = Isolation.DEFAULT, propagation = Propagation.REQUIRED)
+    public Customer createCustomer(CustomerCreationForm customerForm) throws NamingException, NoSuchAlgorithmException, javax.naming.NamingException {
 
         User user = User.builder().username(customerForm.username())
               
@@ -49,6 +58,8 @@ public class CustomerServiceImpl implements CustomerService {
                 .createdAt(Instant.now())
                 .updatedAt(Instant.now())
                 .build();
+
+        portalUserService.createCustomerInLdap(customerForm.username(), customerForm.password(), customerForm.fullName());
 
         return customerRepository.save(customer);
 

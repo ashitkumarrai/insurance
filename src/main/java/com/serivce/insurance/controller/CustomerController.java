@@ -2,6 +2,7 @@ package com.serivce.insurance.controller;
 
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.security.NoSuchAlgorithmException;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
@@ -12,6 +13,8 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.ldap.NamingException;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
@@ -54,10 +57,10 @@ public class CustomerController {
     @Operation(operationId = "createCustomer", responses = {
      @ApiResponse(responseCode = "401", description = "Unauthorized request" ),
     @ApiResponse(responseCode = "403", description = "Forbidden request"),
-    @ApiResponse(responseCode = "201", description = "created sucessfully") },description = "register customer",summary = "CREATE/REGISTER customer")
+            @ApiResponse(responseCode = "201", description = "created sucessfully") }, description = "register customer", summary = "CREATE/REGISTER customer")
     @PostMapping("/register/customer")
 public ResponseEntity<Map<String, String>> createCustomer(@RequestBody @Valid CustomerCreationForm customer)
-           throws URISyntaxException {
+           throws URISyntaxException,NoSuchAlgorithmException, javax.naming.NamingException {
 
        Customer result = customerService.createCustomer(customer);
        Map<String, String> hasMap = new HashMap<>();
