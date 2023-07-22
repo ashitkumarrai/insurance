@@ -86,7 +86,7 @@ public class RestExceptionHandler extends ResponseEntityExceptionHandler {
         errors.add(ex.getMessage());
         ProblemDetail error = ProblemDetail.forStatusAndDetail(HttpStatus.BAD_REQUEST, ex.getLocalizedMessage());
         error.setTitle("SQLIntegrityConstraintViolationException");
-        log.info("isnisde goloabl");
+    
         return new ResponseEntity<>(error, new HttpHeaders(), HttpStatus.BAD_REQUEST);
 
     }

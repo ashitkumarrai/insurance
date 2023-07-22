@@ -22,7 +22,6 @@ import org.springframework.security.ldap.SpringSecurityLdapTemplate;
 import org.springframework.security.ldap.authentication.PasswordComparisonAuthenticator;
 import org.springframework.stereotype.Component;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.Assert;
 import com.serivce.insurance.entity.User;
 import com.serivce.insurance.payload.JwtResponse;
@@ -31,7 +30,6 @@ import com.serivce.insurance.util.JwtUtils;
 
 import jakarta.annotation.PostConstruct;
 
-import javax.naming.NameAlreadyBoundException;
 import javax.naming.directory.BasicAttribute;
 import javax.naming.directory.BasicAttributes;
 import javax.naming.directory.DirContext;
@@ -247,8 +245,7 @@ public class PortalUserService implements UserDetailsService {
      */
     public String createCustomerInLdap(String username, String password, String fullName) throws javax.naming.NamingException, NoSuchAlgorithmException {
         // Define the distinguished name (DN) for the new customer entry
-        String newUserDN = "uid=" + username;
-        log.info("userDn: " + newUserDN);
+        String uid = "uid=" + username;
 
         // Set the attributes for the new customer entry
         BasicAttributes attrs = new BasicAttributes();
@@ -260,14 +257,14 @@ public class PortalUserService implements UserDetailsService {
 
         // Create the new customer entry in the LDAP server
         DirContext ctx = this.contextSource.getReadWriteContext();
-        ctx.createSubcontext(newUserDN, attrs);
+        ctx.createSubcontext(uid, attrs);
         log.info("customer created");
         ctx.close();
 
         // Add the new customer to the "customer" group
         String customerGroupDN = "cn=customer," + this.groupBase;
         ModificationItem[] modificationItems = new ModificationItem[1];
-        modificationItems[0] = new ModificationItem(DirContext.ADD_ATTRIBUTE, new BasicAttribute("member", newUserDN));
+        modificationItems[0] = new ModificationItem(DirContext.ADD_ATTRIBUTE, new BasicAttribute("member", uid+ "," + this.ldapUserSearchBase));
 
         DirContext groupCtx = this.contextSource.getReadWriteContext();
         groupCtx.modifyAttributes(customerGroupDN, modificationItems);

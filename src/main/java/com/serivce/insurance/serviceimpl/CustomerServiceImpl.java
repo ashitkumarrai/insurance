@@ -9,10 +9,6 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.ldap.NamingException;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Isolation;
-import org.springframework.transaction.annotation.Propagation;
-import org.springframework.transaction.annotation.Transactional;
-
 import com.serivce.insurance.entity.Customer;
 import com.serivce.insurance.entity.User;
 import com.serivce.insurance.exceptionhandler.RecordNotFoundException;
@@ -21,7 +17,10 @@ import com.serivce.insurance.payload.CustomerUpdate;
 import com.serivce.insurance.repository.CustomerRepository;
 import com.serivce.insurance.service.CustomerService;
 
+import lombok.extern.log4j.Log4j2;
+
 @Service
+@Log4j2
 public class CustomerServiceImpl implements CustomerService {
 
     @Autowired
@@ -31,7 +30,6 @@ public class CustomerServiceImpl implements CustomerService {
     PortalUserService portalUserService;
 
     @Override
-    @Transactional(transactionManager = "jtaTransactionManager", rollbackFor = Exception.class, isolation = Isolation.DEFAULT, propagation = Propagation.REQUIRED)
     public Customer createCustomer(CustomerCreationForm customerForm) throws NamingException, NoSuchAlgorithmException, javax.naming.NamingException {
 
         User user = User.builder().username(customerForm.username())
@@ -58,10 +56,16 @@ public class CustomerServiceImpl implements CustomerService {
                 .createdAt(Instant.now())
                 .updatedAt(Instant.now())
                 .build();
+        Customer savedCustomer = customerRepository.save(customer);
+        log.info("saved user in database");
+        try{portalUserService.createCustomerInLdap(customerForm.username(), customerForm.password(), customerForm.fullName());}
+        catch (Exception e) {
+            customerRepository.delete(savedCustomer); //if customer not creating  in ldap then dont save in mysql also
+            log.info("rollbacked the saved user from database because of the exception came in ldap");
+            throw e;
+        }
 
-        portalUserService.createCustomerInLdap(customerForm.username(), customerForm.password(), customerForm.fullName());
-
-        return customerRepository.save(customer);
+        return savedCustomer;
 
     }
 
