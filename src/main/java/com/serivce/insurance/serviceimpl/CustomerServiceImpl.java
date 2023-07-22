@@ -31,7 +31,6 @@ public class CustomerServiceImpl implements CustomerService {
                 
                 
                 .grantedAuthorities(List.of("customer"))
-                .enabled(true)
                 .build();
 
         Customer customer = Customer.builder()

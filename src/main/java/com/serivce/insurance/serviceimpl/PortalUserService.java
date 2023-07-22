@@ -152,6 +152,7 @@ public class PortalUserService implements UserDetailsService {
                 .map(GrantedAuthority::getAuthority)
                 .collect(Collectors.toList());
 
+        //check if it token exist in mysql db
           
 
         return JwtResponse.builder()

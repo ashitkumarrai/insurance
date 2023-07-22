@@ -50,9 +50,7 @@ public class User {
 	private List<String> grantedAuthorities;
 	
 	
-	@JsonProperty(access = Access.WRITE_ONLY)
-	//for extra email event verifications 
-    private boolean enabled;
+	
     
 
    
