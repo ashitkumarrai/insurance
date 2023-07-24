@@ -6,6 +6,7 @@ import java.util.List;
 import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 
+import jakarta.persistence.CascadeType;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
@@ -59,6 +60,8 @@ public class Policy {
     @JoinColumn(name = "customer_id")
     @JsonIgnoreProperties({"policies"})
     private Customer customer;
+     @ManyToOne(cascade = CascadeType.MERGE,fetch = FetchType.EAGER)
+    private User createdByUser;
 
 
 }

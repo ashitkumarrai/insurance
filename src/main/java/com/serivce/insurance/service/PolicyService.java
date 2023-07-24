@@ -16,7 +16,7 @@ public interface PolicyService {
 
     Page<Policy> findAll(Pageable paging);
 
-    Policy createPolicy(@Valid PolicyCreationForm policy) throws RecordNotFoundException, BlankMandatoryFieldException;
+    Policy createPolicy(Long customerId, @Valid PolicyCreationForm policy) throws RecordNotFoundException, BlankMandatoryFieldException;
 
 
     Policy findByPolicyName(String policyName) throws RecordNotFoundException;

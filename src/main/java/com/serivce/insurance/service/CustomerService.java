@@ -15,7 +15,7 @@ import com.serivce.insurance.payload.CustomerUpdate;
 
 public interface CustomerService {
 
-    Customer createCustomer(CustomerCreationForm customer) throws NamingException, NoSuchAlgorithmException, javax.naming.NamingException;
+    Customer createCustomer(CustomerCreationForm customer) throws NamingException, NoSuchAlgorithmException, javax.naming.NamingException, RecordNotFoundException;
 
     Page<Customer> findAll(Pageable paging);
 
@@ -23,9 +23,9 @@ public interface CustomerService {
 
     void deleteById(Long id) throws RecordNotFoundException;
 
-    Customer partialUpdateCustomer(String username, CustomerUpdate customer) throws RecordNotFoundException;
+    Customer partialUpdateCustomer(Long customerId, CustomerUpdate customer) throws RecordNotFoundException;
 
-    Customer findByUsername(String username) throws RecordNotFoundException;
-
+ 
+   
     
 }

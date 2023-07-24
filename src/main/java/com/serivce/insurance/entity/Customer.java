@@ -14,11 +14,12 @@ import jakarta.persistence.Embedded;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
+import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToMany;
-import jakarta.persistence.OneToOne;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -29,15 +30,11 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @Builder
 @Entity
-@JsonIgnoreProperties(value = {"hibernateLazyInitializer"}, ignoreUnknown = true)
+@JsonIgnoreProperties(value = {"hibernateLazyInitializer","createdByUser"}, ignoreUnknown = true)
 public class Customer {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long customerId;
-
- 
-   @OneToOne(cascade = CascadeType.ALL)
-    private User user;
    
     @Column(nullable = false)
     private String fullName;
@@ -95,6 +92,11 @@ public class Customer {
       @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "dd-MM-yyyy HH:mm:ss.SS", timezone = "Asia/Kolkata")
       @Column(nullable = false)
       private Instant updatedAt;
+
+      //which agent or promoter does created this customer
+      @ManyToOne(cascade = CascadeType.MERGE, fetch = FetchType.EAGER)
+       
+      private User createdByUser;
 
 
 

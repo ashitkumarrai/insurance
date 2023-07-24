@@ -9,6 +9,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
+import com.serivce.insurance.entity.Customer;
 import com.serivce.insurance.entity.Policy;
 import org.springframework.stereotype.Repository;
 
@@ -27,8 +28,11 @@ public interface PolicyRepository extends JpaRepository<Policy, Long> {
      
    
 
-    @Query("SELECT p FROM Policy p WHERE p.customer.user.username = :query")
-      List<Policy> findByCustomerUserUsernameIgnoreCase(@Param("query") String username);
+ 
+    @Query("SELECT p FROM Policy p WHERE LOWER(p.customer.fullName) LIKE CONCAT('%', LOWER(:fullName), '%')")
+    List<Policy> findByCustomerFullNameIgnoreCase(@Param("fullName") String fullName);
+      
+    List<Policy> findByCreatedByUserId(Long userId);
 
     
 }

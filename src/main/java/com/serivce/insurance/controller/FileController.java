@@ -29,7 +29,6 @@ import com.serivce.insurance.exceptionhandler.RecordNotFoundException;
 import com.serivce.insurance.repository.FileRepository;
 
 import io.swagger.v3.oas.annotations.Operation;
-import io.swagger.v3.oas.annotations.parameters.RequestBody;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletRequest;
@@ -43,7 +42,6 @@ public class FileController {
     FileRepository fr;
 
     @PostMapping(value = "/media/upload", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    @Tag(name = "1. Customer endpoints")
     @Operation(operationId = "uploadMedia", responses = {
         @ApiResponse(responseCode = "401", description = "Unauthorized request" ),
        @ApiResponse(responseCode = "403", description = "Forbidden request"),
@@ -89,7 +87,6 @@ public class FileController {
        @Operation(operationId = "getMediaById", responses = {
    
     @ApiResponse(responseCode = "200", description = "sucessfull") },description = "get media by id",summary = "GET MEDIA BY ID")
-    @Tag(name="1. Customer endpoints")
     @ResponseBody
 
     void showMedia(@PathVariable("id") String id, HttpServletResponse response)
@@ -103,12 +100,11 @@ public class FileController {
 
     }
 
-    @GetMapping("/media/show/all")
-    @Operation(operationId = "showAllMedia",summary = "SHOW ALL MEDIA URLS")
-    @Tag(name="2. Admin endpoints")
-    List<File> showAllMedia() {
+    // @GetMapping("/media/show/all")
+    // @Operation(operationId = "showAllMedia",summary = "SHOW ALL MEDIA URLS")
+    // List<File> showAllMedia() {
 
-        return fr.findAll();
-    }
+    //     return fr.findAll();
+    // }
 
 }

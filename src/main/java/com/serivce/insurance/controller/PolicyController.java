@@ -6,6 +6,8 @@ import java.net.URISyntaxException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -24,13 +26,19 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.itextpdf.text.DocumentException;
 import com.serivce.insurance.entity.Policy;
+import com.serivce.insurance.entity.User;
 import com.serivce.insurance.exceptionhandler.BlankMandatoryFieldException;
 import com.serivce.insurance.exceptionhandler.RecordNotFoundException;
 import com.serivce.insurance.payload.PolicyCreationForm;
+import com.serivce.insurance.payload.PolicyFindAllData;
+import com.serivce.insurance.repository.PolicyRepository;
+import com.serivce.insurance.repository.UserRepository;
 import com.serivce.insurance.service.PdfGenerationService;
 import com.serivce.insurance.service.PolicyService;
+import com.serivce.insurance.util.SecurityUtils;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -42,21 +50,27 @@ import lombok.extern.log4j.Log4j2;
 
 @RestController
 @Log4j2
-@SecurityRequirement(name="Authorization")
+@SecurityRequirement(name = "Authorization")
+@Tag(name = "1. User(Agent,Promoter,etc) endpoints")
+@JsonIgnoreProperties(value = {"hibernateLazyInitializer","createdByUser"}, ignoreUnknown = true)
 public class PolicyController {
     @Autowired
     PolicyService policyService;
      @Autowired
      PdfGenerationService pdfGenerationService;
 
+     @Autowired
+     PolicyRepository policyRepository;
 
-     @PostMapping("/policy")
-     @Tag(name = "1. Customer endpoints")
-      @Operation(operationId = "createPolicy",description = "create/apply policy",summary = "CREATE/APPLY POLICY")
-   public ResponseEntity<Map<String, String>> createPolicy(@RequestBody @Valid PolicyCreationForm policy)
+     @Autowired
+     UserRepository userRepository;
+
+     @PostMapping("/customer/{customerId}/createPolicy")
+      @Operation(operationId = "createPolicy",description = "create/apply policy",summary = "CREATE/APPLY POLICY(Agent or Promoters,etc will create policies on behalf of customers)")
+   public ResponseEntity<Map<String, String>> createPolicy(@PathVariable Long customerId,@RequestBody @Valid PolicyCreationForm policy)
            throws URISyntaxException, RecordNotFoundException, BlankMandatoryFieldException {
 
-       Policy result = policyService.createPolicy(policy);
+       Policy result = policyService.createPolicy(customerId,policy);
        Map<String, String> hasMap = new HashMap<>();
        hasMap.put("response", "created sucessfully!");
        hasMap.put("URI", new URI("/policy?id=" + result.getPolicyId()).toString());
@@ -68,9 +82,8 @@ public class PolicyController {
 
 
    @GetMapping("/policies")
-   @Tag(name = "2. Admin endpoints")
-   @Operation(operationId = "getAllPolicys",summary = "GET LISTS OF ALL POLICIES")
-    public ResponseEntity<List<Policy>> getAllPolicys(@RequestParam(defaultValue = "0") int page,
+   @Operation(operationId = "getAllPolicies",summary = "GET LISTS OF ALL POLICIES")
+    public ResponseEntity<PolicyFindAllData> getAllPolicies(@RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size,
             @RequestParam(defaultValue = "customer.updatedAt") String sortBy,
             @RequestParam(defaultValue = "desc") String order) {
@@ -84,18 +97,22 @@ public class PolicyController {
 
         Page<Policy> pagedResult = policyService.findAll(paging);
 
-        List<Policy> ansList = pagedResult.getContent();
+        PolicyFindAllData response = new PolicyFindAllData();
+    response.setPolicy(pagedResult.getContent());
+    response.setPage(pagedResult.getNumber());
+    response.setPageSize(pagedResult.getSize());
+    response.setTotalElements(pagedResult.getTotalElements());
+    response.setTotalPages(pagedResult.getTotalPages());
 
-        
-    
+  
 
-        return ResponseEntity.ok().body(ansList);
+        return ResponseEntity.ok().body(response);
     }
 
 
     @GetMapping("/policy")
-    @Tag(name = "1. Customer endpoints")
-    @Operation(operationId = "getAllCustomers", responses = {
+  
+    @Operation(operationId = "getPolicyByIdorPolicyName", responses = {
         @ApiResponse(responseCode = "401", description = "Unauthorized request" ),
        @ApiResponse(responseCode = "403", description = "Forbidden request"),
        @ApiResponse(responseCode = "200", description = "sucessfull") },description = "get Policy by id",summary = "GET POLICY BY ID")
@@ -125,11 +142,10 @@ public class PolicyController {
         
     
     @DeleteMapping("/policy/{id}")
-    @Operation(operationId = "getAllCustomers", responses = {
+    @Operation(operationId = "deletePolicy", responses = {
         @ApiResponse(responseCode = "401", description = "Unauthorized request" ),
        @ApiResponse(responseCode = "403", description = "Forbidden request"),
        @ApiResponse(responseCode = "204", description = "DELETE sucessfull") },description = "delete policy by id",summary = "DELETE POLICY BY ID")
-    @Tag(name="1. Customer endpoints")
     public ResponseEntity<Void> deletePolicy(@PathVariable Long id) throws RecordNotFoundException {
 
         policyService.deleteById(id);
@@ -142,9 +158,8 @@ public class PolicyController {
     
 
     @PatchMapping("/policy/{id}")
-    @Operation(operationId = "getAllCustomers",summary = "UPDATE POLICY DETAILS")
+    @Operation(operationId = "partialUpdatePolicy",summary = "UPDATE POLICY DETAILS")
        
-    @Tag(name="1. Customer endpoints")
     public ResponseEntity<Map<String, String>> partialUpdatePolicy(
             @PathVariable("id") final Long id,
             @RequestBody @Valid PolicyCreationForm policy) throws URISyntaxException, RecordNotFoundException {
@@ -163,25 +178,46 @@ public class PolicyController {
     @GetMapping("/{policyId}/generate-pdf")
     @Operation(operationId = "getAllCustomers",summary = "DOWNLOAD PDF OF APPLIED POLICY DETAILS DOCUMENT")
      
-    @Tag(name="1. Customer endpoints")
+   
     public ResponseEntity<byte[]> generatePdf(@PathVariable Long policyId) throws RecordNotFoundException {
-    // Retrieve the policy from the database based on the policyId
+        // Retrieve the policy from the database based on the policyId
 
-    try {
-        Policy policy = policyService.findById(policyId);
-        ByteArrayOutputStream baos = pdfGenerationService.generatePdf(policy);
+        try {
+            Policy policy = policyService.findById(policyId);
+            ByteArrayOutputStream baos = pdfGenerationService.generatePdf(policy);
 
-        byte[] pdfBytes = baos.toByteArray();
+            byte[] pdfBytes = baos.toByteArray();
 
-        HttpHeaders headers = new HttpHeaders();
-        headers.setContentType(MediaType.APPLICATION_PDF);
-        headers.add("Content-Disposition", "attachment; filename=policy.pdf");
+            HttpHeaders headers = new HttpHeaders();
+            headers.setContentType(MediaType.APPLICATION_PDF);
+            headers.add("Content-Disposition", "attachment; filename=policy.pdf");
 
-        return new ResponseEntity<>(pdfBytes, headers, HttpStatus.OK);
-    } catch (DocumentException e) {
-        return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
+            return new ResponseEntity<>(pdfBytes, headers, HttpStatus.OK);
+        } catch (DocumentException e) {
+            return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
+        }
     }
-}
 
+
+@SecurityRequirement(name = "Authorization")
+         @Operation(operationId = "getPoliciesByUserId", responses = {
+     @ApiResponse(responseCode = "401", description = "Unauthorized request" ),
+    @ApiResponse(responseCode = "403", description = "Forbidden request"),
+    @ApiResponse(responseCode = "200", description = "sucessfull") },description = "SHOW LIST OF ALL POLICIES CREATED BY THIS USER",summary = "GET POLICIES CREATED BY THIS USER")
+    @GetMapping("/user/createdPolicies")
+    public ResponseEntity<List<Policy>> getPoliciesByUserId() throws RecordNotFoundException {
+
+        String username = SecurityUtils.getCurrentUserLogin()
+                .orElseThrow(() -> new RecordNotFoundException("user not logged in"));
+
+        Optional<User> userr = userRepository.findByUsername(username);
+        if (!userr.isPresent()) {
+            throw new RecordNotFoundException("logged in User not found");
+
+        }
+
+        return ResponseEntity.ok(policyRepository.findByCreatedByUserId(userr.get().getId()));
+
+    }
 
 }

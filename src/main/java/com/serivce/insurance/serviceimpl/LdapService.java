@@ -4,7 +4,6 @@ import lombok.extern.slf4j.Slf4j;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.ldap.core.DirContextOperations;
 import org.springframework.ldap.core.support.BaseLdapPathContextSource;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -15,14 +14,9 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.ldap.DefaultSpringSecurityContextSource;
 import org.springframework.security.ldap.authentication.BindAuthenticator;
-import org.springframework.security.ldap.userdetails.DefaultLdapAuthoritiesPopulator;
-import org.springframework.security.ldap.userdetails.LdapAuthoritiesPopulator;
-import org.springframework.security.ldap.userdetails.LdapUserDetailsMapper;
-import org.springframework.security.ldap.userdetails.UserDetailsContextMapper;
 import org.springframework.stereotype.Component;
 import org.springframework.stereotype.Service;
 
-import com.serivce.insurance.entity.Role;
 import com.serivce.insurance.entity.User;
 import com.serivce.insurance.payload.JwtResponse;
 import com.serivce.insurance.repository.UserRepository;
@@ -30,10 +24,8 @@ import com.serivce.insurance.util.JwtUtils;
 
 import jakarta.annotation.PostConstruct;
 
-import javax.naming.directory.BasicAttribute;
 import javax.naming.directory.BasicAttributes;
 import javax.naming.directory.DirContext;
-import javax.naming.directory.ModificationItem;
 import java.nio.charset.StandardCharsets;
 import java.security.NoSuchAlgorithmException;
 import java.util.Base64;
@@ -49,7 +41,7 @@ public class LdapService {
 
     @Value("${jwt.secret}")
     private String jwtSecret;
-    @Value("${jwt.timeout:18}")
+    @Value("${jwt.timeout:18000}")
     private long jwtTimeout;
 
     @Value("${ldap.url}")
@@ -71,6 +63,9 @@ public class LdapService {
     private BaseLdapPathContextSource contextSource;
     @Autowired
     private UserRepository userRepository;
+
+    @Autowired
+    private CustomUserDetailsService customUserDetailsService;
     
 
     /**
@@ -93,18 +88,15 @@ public class LdapService {
 
     public JwtResponse authenticateUser(String username, String password) {
 
-        List<Role> grantedAuthorities = this.doLdapSearch(username, password);
-        log.info("Authentication of {} successfull! Users groups are: {}", username, grantedAuthorities);
+        UserDetails userDetails = this.doLdapSearch(username, password);
+        log.info("Authentication of {} successfull! Users groups are: {}", username, userDetails);
 
-        UserPrincipal portalUserPrincipal = new UserPrincipal(User.builder()
-                .username(username)
-                .roles(grantedAuthorities)
-                .build());
-        Authentication authentication = new UsernamePasswordAuthenticationToken(portalUserPrincipal, null,
-                portalUserPrincipal.getAuthorities());
+        
+        Authentication authentication = new UsernamePasswordAuthenticationToken(userDetails, null,
+                userDetails.getAuthorities());
         SecurityContextHolder.getContext().setAuthentication(authentication);
 
-        List<String> userRoles = portalUserPrincipal.getAuthorities().stream()
+        List<String> userRoles = userDetails.getAuthorities().stream()
                 .map(GrantedAuthority::getAuthority)
                 .collect(Collectors.toList());
 
@@ -131,32 +123,26 @@ public class LdapService {
         return JwtResponse.builder()
 
                 .token(jwtToken)
-                .user(portalUserPrincipal)
+                .user(userDetails)
                 .build();
     }
 
-    public List<Role> doLdapSearch(String username, String password) {
+    public UserDetails doLdapSearch(String username, String password) {
         try {
             // Setup the LDAP authenticator
             BindAuthenticator authenticator = new BindAuthenticator(this.contextSource);
             authenticator.setUserDnPatterns(new String[] { this.ldapUserSearchFilter });
 
-            // Setup the LDAP authorities populator
-            LdapAuthoritiesPopulator authoritiesPopulator = new DefaultLdapAuthoritiesPopulator(this.contextSource,
-                    this.groupBase);
-            UserDetailsContextMapper userDetailsContextMapper = new LdapUserDetailsMapper();
+          
 
             // Perform the LDAP authentication
             Authentication authentication = new UsernamePasswordAuthenticationToken(username, password);
-            DirContextOperations authenticationResult = authenticator.authenticate(authentication);
+            authenticator.authenticate(authentication);
 
             // Get the granted authorities
-            UserDetails userDetails = userDetailsContextMapper.mapUserFromContext(authenticationResult, username,
-                    authoritiesPopulator.getGrantedAuthorities(authenticationResult, username));
+            UserDetails userDetails = customUserDetailsService.loadUserByUsername(username);
 
-            return userDetails.getAuthorities().stream()
-                    .map(g -> Role.builder().roleName(g.getAuthority().replace("ROLE_", "").toLowerCase()).build())
-                    .collect(Collectors.toList());
+            return userDetails;
         } catch (
 
         BadCredentialsException e) {
@@ -169,12 +155,12 @@ public class LdapService {
         }
     }
 
-    public String createCustomerInLdap(String username, String password, String fullName)
+    public String createUserInLdap(String username, String password, String fullName)
             throws javax.naming.NamingException, NoSuchAlgorithmException {
-        // Define the distinguished name (DN) for the new customer entry
+        // Define the distinguished name (DN) for the new user entry
         String uid = "uid=" + username;
 
-        // Set the attributes for the new customer entry
+        // Set the attributes for the new user entry
         BasicAttributes attrs = new BasicAttributes();
         attrs.put("objectclass", "inetOrgPerson");
         attrs.put("uid", username);
@@ -182,23 +168,23 @@ public class LdapService {
         attrs.put("sn", username);
         attrs.put("userPassword", encodePassword(password)); // Encode the password before storing it
 
-        // Create the new customer entry in the LDAP server
+        // Create the new user entry in the LDAP server
         DirContext ctx = this.contextSource.getReadWriteContext();
         ctx.createSubcontext(uid, attrs);
-        log.info("customer created");
+        log.info("user created");
         ctx.close();
 
-        // Add the new customer to the "customer" group
-        String customerGroupDN = "cn=customer," + this.groupBase;
-        ModificationItem[] modificationItems = new ModificationItem[1];
-        modificationItems[0] = new ModificationItem(DirContext.ADD_ATTRIBUTE,
-                new BasicAttribute("member", uid + "," + this.ldapUserSearchBase));
+        // // Add the new user to the "user" group
+        // String userGroupDN = "cn=user," + this.groupBase;
+        // ModificationItem[] modificationItems = new ModificationItem[1];
+        // modificationItems[0] = new ModificationItem(DirContext.ADD_ATTRIBUTE,
+        //         new BasicAttribute("member", uid + "," + this.ldapUserSearchBase));
 
-        DirContext groupCtx = this.contextSource.getReadWriteContext();
-        groupCtx.modifyAttributes(customerGroupDN, modificationItems);
-        groupCtx.close();
+        // DirContext groupCtx = this.contextSource.getReadWriteContext();
+        // groupCtx.modifyAttributes(userGroupDN, modificationItems);
+        // groupCtx.close();
 
-        return username;
+         return username;
     }
 
     // Helper method to encode the password using SHA-1 and Base64

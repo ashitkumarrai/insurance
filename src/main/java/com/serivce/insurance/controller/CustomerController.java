@@ -5,7 +5,6 @@ import java.net.URISyntaxException;
 import java.security.NoSuchAlgorithmException;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Optional;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -13,6 +12,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.ldap.NamingException;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
@@ -23,15 +23,13 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.serivce.insurance.entity.Customer;
-import com.serivce.insurance.entity.User;
 import com.serivce.insurance.exceptionhandler.RecordNotFoundException;
 import com.serivce.insurance.payload.CustomerCreationForm;
 import com.serivce.insurance.payload.CustomerFindAllData;
 import com.serivce.insurance.payload.CustomerUpdate;
+import com.serivce.insurance.repository.CustomerRepository;
 import com.serivce.insurance.repository.UserRepository;
 import com.serivce.insurance.service.CustomerService;
-import com.serivce.insurance.util.SecurityUtils;
-
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
@@ -42,7 +40,7 @@ import lombok.extern.log4j.Log4j2;
 
 @RestController
 @Log4j2
-
+  @Tag(name = "1. User(Agent,Promoter,etc) endpoints")
 public class CustomerController {
     @Autowired
     CustomerService customerService;
@@ -50,15 +48,18 @@ public class CustomerController {
     @Autowired
     UserRepository userRepository;
 
-    @Tag(name = "1. Customer endpoints")
-     
+    @Autowired
+    CustomerRepository customerRepository;
+
+  
+     @SecurityRequirement(name="Authorization")
     @Operation(operationId = "createCustomer", responses = {
      @ApiResponse(responseCode = "401", description = "Unauthorized request" ),
     @ApiResponse(responseCode = "403", description = "Forbidden request"),
-            @ApiResponse(responseCode = "201", description = "created sucessfully") }, description = "register customer", summary = "CREATE/REGISTER customer")
-    @PostMapping("/register/customer")
+            @ApiResponse(responseCode = "201", description = "created sucessfully") }, description = "register /Onboard customer(users like agent or promoters will create customers)", summary = "Onboard/REGISTER customer")
+    @PostMapping("/create/customer")
 public ResponseEntity<Map<String, String>> createCustomer(@RequestBody @Valid CustomerCreationForm customer)
-           throws URISyntaxException,NoSuchAlgorithmException, javax.naming.NamingException {
+           throws URISyntaxException,NoSuchAlgorithmException, javax.naming.NamingException, NamingException, RecordNotFoundException {
 
        Customer result = customerService.createCustomer(customer);
        Map<String, String> hasMap = new HashMap<>();
@@ -72,7 +73,6 @@ public ResponseEntity<Map<String, String>> createCustomer(@RequestBody @Valid Cu
 
 @SecurityRequirement(name="Authorization")
 @GetMapping("/customers")
-@Tag(name = "2. Admin endpoints")
     @Operation(operationId = "getAllCustomers", responses = {
      @ApiResponse(responseCode = "401", description = "Unauthorized request" ),
     @ApiResponse(responseCode = "403", description = "Forbidden request"),
@@ -109,34 +109,32 @@ public ResponseEntity<Map<String, String>> createCustomer(@RequestBody @Valid Cu
 
     @SecurityRequirement(name = "Authorization")
 
-    @Tag(name = "1. Customer endpoints")
          @Operation(operationId = "getAllCustomers", responses = {
      @ApiResponse(responseCode = "401", description = "Unauthorized request" ),
     @ApiResponse(responseCode = "403", description = "Forbidden request"),
-    @ApiResponse(responseCode = "200", description = "sucessfull") },description = "get customer id or usename",summary = "GET CUSTOMER BY ID OR USERNAME")
+    @ApiResponse(responseCode = "200", description = "sucessfull") },description = "get customer id or usename",summary = "GET CUSTOMERS BY ID OR Customer FUll Name")
     @GetMapping("/customer")
-    public Customer getCustomerById(@RequestParam(defaultValue = "0") Long id,
-            @RequestParam(defaultValue = "default") String username) throws RecordNotFoundException {
+    public ResponseEntity<Object> getCustomerById(@RequestParam(defaultValue = "0") Long customerId,
+            @RequestParam(defaultValue = "default") String customerFullName) throws RecordNotFoundException {
 
-        if (id != 0l) {
+        if (customerId != 0l) {
             log.info("request param id catch in getcustomer by id method");
-            return customerService.findById(id);
+            return ResponseEntity.ok(customerService.findById(customerId));
 
         }
          
-        if (!username.equals("default")) {
-            return customerService.findByUsername(username);
+        if (!customerFullName.equals("default")) {
+            return ResponseEntity.ok(customerRepository.findByFullNameIgnoreCase(customerFullName));
 
         }
       
 
-        return customerService.findById(id);
+        return ResponseEntity.ok(customerService.findById(customerId));
 
     }
 
         
     @SecurityRequirement(name = "Authorization")
-    @Tag(name="1. Customer endpoints")
     @DeleteMapping("/customer/delete/{id}")
     
     @Operation(operationId = "deleteCustomer", responses = {
@@ -155,57 +153,25 @@ public ResponseEntity<Map<String, String>> createCustomer(@RequestBody @Valid Cu
     }
     
     @SecurityRequirement(name = "Authorization")
-          @Operation(operationId = "getAllCustomers", responses = {
+          @Operation(operationId = "partialUpdateCustomer", responses = {
      @ApiResponse(responseCode = "401", description = "Unauthorized request" ),
     @ApiResponse(responseCode = "403", description = "Forbidden request"),
     @ApiResponse(responseCode = "201", description = "sucessfull") },description = "udate customer ",summary = "UPDATE  CUSTOMER")
-       @PatchMapping("/customer/{id}")
-       @Tag(name="1. Customer endpoints")
-    public ResponseEntity<Map<String, String>> partialUpdateCustomer(
-            @RequestBody @Valid CustomerUpdate customer) throws URISyntaxException, RecordNotFoundException {
-                String username = SecurityUtils.getCurrentUserLogin().orElseThrow(() -> new RecordNotFoundException("user not logged in"));
-        Customer result = customerService.partialUpdateCustomer(username, customer);
+       @PatchMapping("/customer/{customerId}")
+    public ResponseEntity<Map<String, String>> partialUpdateCustomer(@PathVariable Long customerId,
+            @RequestBody @Valid CustomerUpdate customer ) throws URISyntaxException, RecordNotFoundException {
+              
+        Customer result = customerService.partialUpdateCustomer(customerId, customer);
 
         Map<String, String> hasMap = new HashMap<>();
         hasMap.put("response", "updated sucessfully!");
+        hasMap.put("URI", new URI("/customer/" + result.getCustomerId()).toString());
 
-        hasMap.put("URI", new URI("/customer?id=" + result.getCustomerId()).toString());
-
-        return ResponseEntity.created(new URI("/customer?id=" + result.getCustomerId())).body(hasMap);
-
-    }
-
-     @SecurityRequirement(name="Authorization")
-     @GetMapping("/profile")
-     @Tag(name = "1. Customer endpoints")
-        @Operation(operationId = "getAllCustomers", responses = {
-     @ApiResponse(responseCode = "401", description = "Unauthorized request" ),
-    @ApiResponse(responseCode = "403", description = "Forbidden request"),
-    @ApiResponse(responseCode = "200", description = "sucessfull") },description = "get logged in customer",summary = "GET PROFILE OF LOGGED ID CUSTOMER")
-    public ResponseEntity<Object> getProfile()
-            throws RecordNotFoundException {
-
-        String username = SecurityUtils.getCurrentUserLogin().orElseThrow(() -> new RecordNotFoundException("user not logged in"));
-
-        Optional<User> userr = userRepository.findByUsername(username);
-        if (!userr.isPresent()) {
-            throw new RecordNotFoundException("logged in User not found");
-
-        }
-
-        if (SecurityUtils.hasCurrentUserThisAuthority("customer")) {
-            return new ResponseEntity<>(customerService.findByUsername(username)
-                   , HttpStatus.OK);
-
-        }
-
-        else if (SecurityUtils.hasCurrentUserThisAuthority("admin")) {
-            return new ResponseEntity<>(userRepository.findByUsername(username)
-                    .orElseThrow(() -> new RecordNotFoundException("profile not found in db")), HttpStatus.OK);
-        } 
-        return new ResponseEntity<>(HttpStatus.UNAUTHORIZED);
+        return ResponseEntity.created(new URI("/customer/" + result.getCustomerId())).body(hasMap);
 
     }
+
+     
 
 
 }
